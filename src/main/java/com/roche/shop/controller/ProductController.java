@@ -1,87 +1,74 @@
 package com.roche.shop.controller;
 
 import com.roche.shop.entity.Product;
+import com.roche.shop.entity.ProductDTO;
+import com.roche.shop.entity.ProductMapper;
+import com.roche.shop.exception.ProductNotFoundException;
 import com.roche.shop.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Min;
+import java.net.URI;
 import java.util.List;
 
 /**
  * Product Rest Controller.
  */
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api")
 public class ProductController {
 
-    /**
-     * Auto wiring the Product Service.
-     */
     @Autowired
     private ProductService productService;
 
-
-    /**
-     * get Api to return list of all products.
-     * @return List of products
-     */
-    @GetMapping()
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> productList = productService.getAllProducts();
-        return new ResponseEntity<>(productList, HttpStatus.OK);
+    @GetMapping(value="/products")
+    List<Product> getAll(){
+        return productService.getAllProducts();
     }
 
-    /**
-     * Api to save new Product.
-     * @param product Product to add
-     * @return Saved Product
-     */
-    @PostMapping()
-    public ResponseEntity<Product> saveProduct(
-            @RequestBody final  Product product) {
-        Product savedProduct = productService.saveProduct(product);
-        return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
+    @GetMapping(value="/products/{id}")
+    ResponseEntity<Product> getById(@PathVariable("id") @Min(1) int id) {
+
+        Product prd = productService.findById(id)
+                .orElseThrow(()->new ProductNotFoundException("No Product with ID : "+id));
+
+        return ResponseEntity.ok().body(prd);
     }
 
-
-    /**
-     * get Api to return the Product by Id.
-     * @param id Id
-     * @return Products
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(
-            @PathVariable("id") final Long id) {
-        Product product = productService.getProductById(id);
-        return new ResponseEntity<>(product, HttpStatus.OK);
+    @PostMapping(value="/products")
+    ResponseEntity<?> createProduct(@Valid @RequestBody ProductDTO inprod) {
+        Product prd      = ProductMapper.DtoToEntity(inprod);
+        Product addedprd = productService.save(prd);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(addedprd.getId())
+                .toUri();
+        return ResponseEntity.created(location).build();
     }
 
-    /**
-     * Api to update an existing Product.
-     * @param id Id to update
-     * @param productToUpdate Product to update
-     * @return Updated Product
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProductById(
-            @PathVariable("id") final Long id,
-            @RequestBody final Product productToUpdate) {
-        Product updatedProduct
-                = productService.updateProductById(id, productToUpdate);
-        return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
+    @PutMapping(value="/products/{id}")
+    ResponseEntity<Product> updateProduct(@PathVariable("id")  @Min(1) int id, @Valid @RequestBody ProductDTO inprod) {
+
+        Product prd = productService.findById(id)
+                .orElseThrow(()->new ProductNotFoundException("No Product with ID : "+id));
+
+        Product newprd = ProductMapper.DtoToEntity(inprod);
+        newprd.setId(prd.getId());
+        productService.save(newprd);
+        return ResponseEntity.ok().body(newprd);
     }
 
-    /**
-     * Api to delete a Product.
-     * @param id Id to delete
-     * @return Success Message
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteProductById(
-            @PathVariable("id") final Long id) {
-        productService.deleteProductById(id);
-        return new ResponseEntity<>("Success", HttpStatus.OK);
+    @DeleteMapping(value="/products/{id}")
+    ResponseEntity<String> deleteProduct( @PathVariable("id") @Min(1) int id) {
+        Product prd = productService.findById(id)
+                .orElseThrow(()->new ProductNotFoundException("No Product with ID : "+id));
+
+        productService.delete(prd.getId());
+        return ResponseEntity.ok().body("Product with ID : "+id+" deleted with success!");
+
     }
 }

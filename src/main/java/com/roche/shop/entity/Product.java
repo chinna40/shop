@@ -1,73 +1,55 @@
 package com.roche.shop.entity;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
-import org.hibernate.annotations.CreationTimestamp;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-import javax.persistence.*;
-import java.math.BigDecimal;
-import java.util.Date;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
+@Getter
+@Setter
+@Accessors(chain = true)
+@NoArgsConstructor
 @Entity
-public class Product {
+@Table(name = "products")
+@EntityListeners(AuditingEntityListener.class)
+@JsonIgnoreProperties(value = {"createdDate", "updatedDate"})
+public class Product implements Serializable {
 
     /**
-     * Id.
+     *
      */
+    private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
-    /**
-     * Product Name.
-     */
     private String name;
 
-    @Column(name = "price")
-    private BigDecimal price;
+    private int price;
 
-    @CreationTimestamp
-    private Date createdAt;
+    @Column(nullable = false, updatable = false)
+    @CreatedDate
+    private LocalDateTime createdDate;
 
-    @CreationTimestamp
-    private Date updatedAt;
+    @Column(nullable = false)
+    @LastModifiedDate
+    private LocalDateTime updatedDate;
 
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 }
